@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "API for moto gear picker application",
   "main": "dist/main.js",
+  "packageManager": "pnpm@10.31.0",
+  "engines": {
+    "node": "24.14.0",
+    "pnpm": "10.31.0"
+  },
   "private": true,
   "scripts": {
     "build": "nest build",
