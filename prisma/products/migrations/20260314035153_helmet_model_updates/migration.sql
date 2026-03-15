@@ -1,0 +1,4 @@
+-- Migration applied manually via Supabase SQL Editor
+-- Changes: helmet_type and shell_material to arrays, 
+-- visor_pinlock replaced with visor_pinlock_compatible + visor_pinlock_included,
+-- added pinlock_dks_code, tear_off_compatible, included_accessories
