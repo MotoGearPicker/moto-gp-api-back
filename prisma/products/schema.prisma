@@ -105,20 +105,20 @@ model helmet_size_chart_by_brand {
 }
 
 model scrape_review {
-  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  source_url         String
-  source             String        @default("brand-site") @db.VarChar(50)
-  raw_data           Json?
-  raw_model_data      Json?         // ScrapedModelData — model-level fields (shared across variants)
-  raw_variant_data    Json?         // ScrapedVariantData — variant-level fields (unique per color/graphic)
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source_url          String
+  source              String        @default("brand-site") @db.VarChar(50)
+  raw_data            Json?
+  raw_model_data      Json? // ScrapedModelData — model-level fields (shared across variants)
+  raw_variant_data    Json? // ScrapedVariantData — variant-level fields (unique per color/graphic)
   edited_data         Json?
-  edited_model_data   Json?         // Admin edits to model-level fields
-  edited_variant_data Json?         // Admin edits to variant-level fields
-  status             review_status @default(pending)
-  notes              String?
-  created_at         DateTime      @default(now()) @db.Timestamptz(6)
-  reviewed_at        DateTime?     @db.Timestamptz(6)
-  source_content     String?
+  edited_model_data   Json? // Admin edits to model-level fields
+  edited_variant_data Json? // Admin edits to variant-level fields
+  status              review_status @default(pending)
+  notes               String?
+  created_at          DateTime      @default(now()) @db.Timestamptz(6)
+  reviewed_at         DateTime?     @db.Timestamptz(6)
+  source_content      String?
 
   @@index([status])
 }
@@ -198,6 +198,7 @@ enum helmet_shell_material {
   polycarbonate
   fiberglass
   carbon_fiber
+  aramid_fiber
 }
 
 enum helmet_type {

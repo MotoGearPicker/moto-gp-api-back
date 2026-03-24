@@ -437,6 +437,11 @@ export class HelmetModelsService {
       created_at: true,
       updated_at: true,
       deleted_at: true,
+      helmet_model_variant: {
+        where: { deleted_at: null },
+        select: { image_url: true },
+        take: 1,
+      },
     };
   }
 
@@ -471,6 +476,7 @@ export class HelmetModelsService {
       },
       certification: raw.certification,
       includedAccessories: raw.included_accessories,
+      images: raw.helmet_model_variant?.[0]?.image_url ?? [],
       createdAt: raw.created_at,
       updatedAt: raw.updated_at,
       deletedAt: raw.deleted_at,
