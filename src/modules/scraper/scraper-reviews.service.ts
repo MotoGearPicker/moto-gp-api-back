@@ -98,13 +98,13 @@ export class ScraperReviewsService {
   }
 
   private getModelSlug(review: any): string {
-    // Dedicated column first
-    if (review.raw_model_data) {
-      return (review.raw_model_data as any).modelSlug ?? '';
-    }
-    // Edited model data
+    // Edited model data takes priority (user may have re-grouped)
     if (review.edited_model_data) {
       return (review.edited_model_data as any).modelSlug ?? '';
+    }
+    // Dedicated column
+    if (review.raw_model_data) {
+      return (review.raw_model_data as any).modelSlug ?? '';
     }
     // Fallback to raw_data
     const { modelData } = this.extractData(review);
