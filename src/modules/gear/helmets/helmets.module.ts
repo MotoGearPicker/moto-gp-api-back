@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { HelmetModelsService } from './models/helmet-models.service';
+import { HelmetModelsAdminService } from './models/helmet-models-admin.service';
 import { HelmetModelsController } from './models/helmet-models.controller';
 import { HelmetModelsAdminController } from './models/helmet-models.admin.controller';
 import { HelmetVariantsService } from './variants/helmet-variants.service';
@@ -19,6 +20,7 @@ import { HelmetInventoryAdminController } from './inventory/helmet-inventory.adm
   ],
   providers: [
     HelmetModelsService,
+    HelmetModelsAdminService,
     HelmetVariantsService,
     HelmetSizesService,
     HelmetInventoryService,

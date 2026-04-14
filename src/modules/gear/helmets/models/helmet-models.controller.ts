@@ -8,16 +8,6 @@ import { FilterHelmetModelsDto } from './dto/filter-helmet-models.dto';
 export class HelmetModelsController {
   constructor(private readonly service: HelmetModelsService) {}
 
-  @Get('brands')
-  @ApiOperation({
-    summary: 'Listar marcas con cascos',
-    description: 'Retorna solo las marcas que tienen al menos un modelo de casco activo.',
-  })
-  @ApiResponse({ status: 200, description: 'Lista de marcas' })
-  findBrands() {
-    return this.service.findBrands();
-  }
-
   @Get()
   @ApiOperation({
     summary: 'Listar cascos',
@@ -25,18 +15,22 @@ export class HelmetModelsController {
   })
   @ApiResponse({ status: 200, description: 'Lista paginada de cascos' })
   findAll(@Query() filters: FilterHelmetModelsDto) {
-    return this.service.findAll(filters, false);
+    return this.service.findAll(filters);
   }
 
-  @Get(':id')
+  @Get('by-slug/:brandSlug/:modelSlug')
   @ApiOperation({
-    summary: 'Obtener casco por ID',
+    summary: 'Obtener casco por slug',
     description: 'Retorna el detalle completo de un casco con todas sus variantes y tallas.',
   })
-  @ApiParam({ name: 'id', description: 'UUID del modelo de casco' })
+  @ApiParam({ name: 'brandSlug', description: 'Slug de la marca' })
+  @ApiParam({ name: 'modelSlug', description: 'Slug del modelo de casco' })
   @ApiResponse({ status: 200, description: 'Detalle del casco' })
   @ApiResponse({ status: 404, description: 'Casco no encontrado' })
-  findOne(@Param('id') id: string) {
-    return this.service.findOne(id, false);
+  findOne(
+    @Param('brandSlug') brandSlug: string,
+    @Param('modelSlug') modelSlug: string,
+  ) {
+    return this.service.findOneBySlug(brandSlug, modelSlug);
   }
 }

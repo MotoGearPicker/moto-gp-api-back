@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AdminAccessTokenGuard } from '../../../auth/guards';
-import { HelmetModelsService } from './helmet-models.service';
+import { HelmetModelsAdminService } from './helmet-models-admin.service';
 import { CreateHelmetModelDto } from './dto/create-helmet-model.dto';
 import { UpdateHelmetModelDto } from './dto/update-helmet-model.dto';
 import { FilterHelmetModelsAdminDto } from './dto/filter-helmet-models-admin.dto';
@@ -24,7 +24,7 @@ import { FilterHelmetModelsAdminDto } from './dto/filter-helmet-models-admin.dto
 @ApiTags('Admin — Helmets')
 @Controller('admin/gear/helmets')
 export class HelmetModelsAdminController {
-  constructor(private readonly service: HelmetModelsService) {}
+  constructor(private readonly service: HelmetModelsAdminService) {}
 
   @Get()
   @ApiOperation({
@@ -33,7 +33,7 @@ export class HelmetModelsAdminController {
   })
   @ApiResponse({ status: 200, description: 'Lista paginada de modelos (vista admin, sin variantes)' })
   findAll(@Query() filters: FilterHelmetModelsAdminDto) {
-    return this.service.findAllModelsAdmin(filters);
+    return this.service.findAll(filters);
   }
 
   @Get(':id')
@@ -45,7 +45,7 @@ export class HelmetModelsAdminController {
   @ApiResponse({ status: 200, description: 'Detalle completo del casco (vista admin)' })
   @ApiResponse({ status: 404, description: 'Casco no encontrado' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.service.findOne(id, true);
+    return this.service.findOne(id);
   }
 
   @Post()

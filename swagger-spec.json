@@ -66,22 +66,6 @@
         ]
       }
     },
-    "/gear/helmets/brands": {
-      "get": {
-        "description": "Retorna solo las marcas que tienen al menos un modelo de casco activo.",
-        "operationId": "HelmetModelsController_findBrands",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Lista de marcas"
-          }
-        },
-        "summary": "Listar marcas con cascos",
-        "tags": [
-          "Helmets"
-        ]
-      }
-    },
     "/gear/helmets": {
       "get": {
         "description": "Retorna cascos activos con sus variantes, tallas y precio mínimo por tienda. Soporta múltiples filtros.",
@@ -215,31 +199,58 @@
             }
           },
           {
+            "name": "finish",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "gloss",
+                  "matte",
+                  "satin"
+                ]
+              }
+            }
+          },
+          {
             "name": "colorFamily",
             "required": false,
             "in": "query",
             "schema": {
-              "type": "string",
-              "enum": [
-                "black",
-                "white",
-                "red",
-                "blue",
-                "green",
-                "yellow",
-                "orange",
-                "pink",
-                "purple",
-                "grey",
-                "silver",
-                "gold",
-                "brown",
-                "carbon",
-                "multicolor",
-                "bronze",
-                "hi_vis",
-                "iridescent"
-              ]
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "black",
+                  "white",
+                  "red",
+                  "blue",
+                  "green",
+                  "yellow",
+                  "orange",
+                  "pink",
+                  "purple",
+                  "grey",
+                  "silver",
+                  "gold",
+                  "brown",
+                  "carbon",
+                  "multicolor",
+                  "bronze",
+                  "hi_vis",
+                  "iridescent"
+                ]
+              }
+            }
+          },
+          {
+            "name": "mono",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
             }
           },
           {
@@ -278,6 +289,14 @@
             }
           },
           {
+            "name": "emergencyRelease",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "minPrice",
             "required": false,
             "in": "query",
@@ -293,14 +312,6 @@
             "schema": {
               "minimum": 0,
               "type": "number"
-            }
-          },
-          {
-            "name": "includeDeleted",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "boolean"
             }
           },
           {
@@ -336,16 +347,25 @@
         ]
       }
     },
-    "/gear/helmets/{id}": {
+    "/gear/helmets/by-slug/{brandSlug}/{modelSlug}": {
       "get": {
         "description": "Retorna el detalle completo de un casco con todas sus variantes y tallas.",
         "operationId": "HelmetModelsController_findOne",
         "parameters": [
           {
-            "name": "id",
+            "name": "brandSlug",
             "required": true,
             "in": "path",
-            "description": "UUID del modelo de casco",
+            "description": "Slug de la marca",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "modelSlug",
+            "required": true,
+            "in": "path",
+            "description": "Slug del modelo de casco",
             "schema": {
               "type": "string"
             }
@@ -359,7 +379,7 @@
             "description": "Casco no encontrado"
           }
         },
-        "summary": "Obtener casco por ID",
+        "summary": "Obtener casco por slug",
         "tags": [
           "Helmets"
         ]

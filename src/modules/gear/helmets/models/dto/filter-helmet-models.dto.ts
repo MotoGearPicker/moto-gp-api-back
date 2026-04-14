@@ -14,6 +14,7 @@ import {
   ColorFamily,
   HelmetCertification,
   HelmetClosureType,
+  HelmetFinish,
   HelmetShellMaterial,
   HelmetType,
   VisorPinlock,
@@ -67,8 +68,21 @@ export class FilterHelmetModelsDto extends PaginationDto {
   minShellSizes?: number;
 
   @IsOptional()
-  @IsEnum(ColorFamily)
-  colorFamily?: ColorFamily;
+  @IsArray()
+  @IsEnum(HelmetFinish, { each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  finish?: HelmetFinish[];
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(ColorFamily, { each: true })
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  colorFamily?: ColorFamily[];
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  mono?: boolean;
 
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
@@ -94,6 +108,11 @@ export class FilterHelmetModelsDto extends PaginationDto {
   maxWeightGrams?: number;
 
   @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  emergencyRelease?: boolean;
+
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
@@ -104,10 +123,4 @@ export class FilterHelmetModelsDto extends PaginationDto {
   @IsNumber()
   @Min(0)
   maxPrice?: number;
-
-  // Solo tiene efecto en admin view
-  @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean()
-  includeDeleted?: boolean;
 }
