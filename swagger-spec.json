@@ -2284,6 +2284,197 @@
           "Scraper Reviews"
         ]
       }
+    },
+    "/stores": {
+      "get": {
+        "operationId": "StoresController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lista de tiendas"
+          }
+        },
+        "summary": "Listar tiendas afiliadas activas",
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/admin/stores": {
+      "get": {
+        "operationId": "StoresAdminController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Lista de tiendas"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "[Admin] Listar todas las tiendas (incluye eliminadas)",
+        "tags": [
+          "Admin — Stores"
+        ]
+      },
+      "post": {
+        "description": "Crea una tienda. Si se adjunta un logo (campo \"logo\"), se sube a S3 y se guarda la URL.",
+        "operationId": "StoresAdminController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "domain"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "MotoFull"
+                  },
+                  "domain": {
+                    "type": "string",
+                    "example": "motofull.com"
+                  },
+                  "affiliateProgram": {
+                    "type": "string",
+                    "example": "TradeDoubler"
+                  },
+                  "commissionPct": {
+                    "type": "number",
+                    "example": 5.5
+                  },
+                  "logo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Imagen del logo (opcional)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tienda creada"
+          },
+          "409": {
+            "description": "Ya existe una tienda con ese dominio"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "[Admin] Crear tienda afiliada",
+        "tags": [
+          "Admin — Stores"
+        ]
+      }
+    },
+    "/admin/stores/{id}": {
+      "get": {
+        "operationId": "StoresAdminController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "UUID de la tienda",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle de la tienda"
+          },
+          "404": {
+            "description": "Tienda no encontrada"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "[Admin] Obtener tienda por ID",
+        "tags": [
+          "Admin — Stores"
+        ]
+      },
+      "delete": {
+        "operationId": "StoresAdminController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "UUID de la tienda",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Tienda eliminada"
+          },
+          "404": {
+            "description": "Tienda no encontrada"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "[Admin] Eliminar tienda (soft delete)",
+        "tags": [
+          "Admin — Stores"
+        ]
+      }
+    },
+    "/admin/stores/{id}/restore": {
+      "post": {
+        "operationId": "StoresAdminController_restore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "UUID de la tienda",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Tienda restaurada"
+          },
+          "404": {
+            "description": "Tienda no encontrada"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "[Admin] Restaurar tienda eliminada",
+        "tags": [
+          "Admin — Stores"
+        ]
+      }
     }
   },
   "info": {

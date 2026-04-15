@@ -5,8 +5,10 @@ import { PrismaModule } from './prisma/prisma.module';
 import { LoggerModule } from './modules/logger';
 import { BackupModule } from './modules/backup/backup.module';
 import { ScraperModule } from './modules/scraper/scraper.module';
+import { S3Module } from './modules/s3/s3.module';
+import { StoresModule } from './modules/stores/stores.module';
 
 @Module({
-  imports: [PrismaModule, LoggerModule, GearModule, AuthModule, BackupModule, ScraperModule],
+  imports: [PrismaModule, LoggerModule, S3Module, GearModule, AuthModule, BackupModule, ScraperModule, StoresModule],
 })
 export class AppModule {}
