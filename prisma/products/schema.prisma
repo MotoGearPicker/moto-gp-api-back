@@ -93,6 +93,7 @@ model helmet_model {
   @@unique([brand_id, name])
   @@unique([brand_id, slug])
   @@index([deleted_at, brand_id])
+  @@index([deleted_at, name])
 }
 
 model helmet_size_chart_by_brand {

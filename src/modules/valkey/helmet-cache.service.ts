@@ -1,8 +1,7 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import Valkey from 'iovalkey';
 import { ProductsPrismaService } from '../../prisma/products-prisma.service';
-import { VALKEY_CLIENT } from './valkey.module';
+import { VALKEY_CLIENT } from './valkey.constants';
 
 export interface CachedVariantFilter {
   colorFamilies: string[];
@@ -49,23 +48,13 @@ const CATALOG_KEY = 'catalog:helmets';
 const detailKey = (brandSlug: string, modelSlug: string) => `helmet:${brandSlug}:${modelSlug}`;
 
 @Injectable()
-export class CatalogCacheService implements OnModuleInit {
-  private readonly logger = new Logger(CatalogCacheService.name);
+export class HelmetCacheService {
+  private readonly logger = new Logger(HelmetCacheService.name);
 
   constructor(
     @Inject(VALKEY_CLIENT) private readonly client: Valkey,
     private readonly db: ProductsPrismaService,
   ) {}
-
-  async onModuleInit() {
-    await this.reloadAll();
-  }
-
-  @Cron('*/30 * * * *')
-  async scheduledReload() {
-    this.logger.log('Scheduled catalog reload started');
-    await this.reloadAll();
-  }
 
   // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -103,13 +92,8 @@ export class CatalogCacheService implements OnModuleInit {
     }
   }
 
-  async reloadAll(): Promise<void> {
-    try {
-      await Promise.all([this.loadCatalog(), this.loadAllDetails()]);
-      this.logger.log('Catalog cache reload complete');
-    } catch (err) {
-      this.logger.error('Catalog cache reload failed', err);
-    }
+  async reload(): Promise<void> {
+    await Promise.all([this.loadCatalog(), this.loadAllDetails()]);
   }
 
   // ─── Private loaders ─────────────────────────────────────────────────────────

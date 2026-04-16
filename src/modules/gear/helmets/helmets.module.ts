@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { CatalogCacheService } from '../../valkey/catalog-cache.service';
 import { HelmetModelsService } from './models/helmet-models.service';
 import { HelmetModelsAdminService } from './models/helmet-models-admin.service';
 import { HelmetModelsController } from './models/helmet-models.controller';
@@ -20,7 +19,6 @@ import { HelmetInventoryAdminController } from './inventory/helmet-inventory.adm
     HelmetInventoryAdminController,
   ],
   providers: [
-    CatalogCacheService,
     HelmetModelsService,
     HelmetModelsAdminService,
     HelmetVariantsService,

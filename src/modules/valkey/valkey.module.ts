@@ -1,8 +1,12 @@
 import { Global, Module } from '@nestjs/common';
 import Valkey from 'iovalkey';
 import { VALKEY_URL } from '../../config/valkey.config';
+import { BrandCacheService } from './brand-cache.service';
+import { CacheCoordinatorService } from './cache.coordinator.service';
+import { HelmetCacheService } from './helmet-cache.service';
+import { VALKEY_CLIENT } from './valkey.constants';
 
-export const VALKEY_CLIENT = 'VALKEY_CLIENT';
+export { VALKEY_CLIENT } from './valkey.constants';
 
 @Global()
 @Module({
@@ -15,7 +19,10 @@ export const VALKEY_CLIENT = 'VALKEY_CLIENT';
         });
       },
     },
+    HelmetCacheService,
+    BrandCacheService,
+    CacheCoordinatorService,
   ],
-  exports: [VALKEY_CLIENT],
+  exports: [VALKEY_CLIENT, HelmetCacheService, BrandCacheService],
 })
 export class ValkeyModule {}

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ProductsPrismaService } from '../../../../prisma/products-prisma.service';
-import { CatalogCacheService } from '../../../valkey/catalog-cache.service';
+import { HelmetCacheService } from '../../../valkey/helmet-cache.service';
 import { CreateHelmetInventoryDto } from './dto/create-helmet-inventory.dto';
 import { UpdateHelmetInventoryDto } from './dto/update-helmet-inventory.dto';
 
@@ -8,7 +8,7 @@ import { UpdateHelmetInventoryDto } from './dto/update-helmet-inventory.dto';
 export class HelmetInventoryService {
   constructor(
     private readonly db: ProductsPrismaService,
-    private readonly cache: CatalogCacheService,
+    private readonly cache: HelmetCacheService,
   ) {}
 
   async create(dto: CreateHelmetInventoryDto) {
@@ -27,7 +27,7 @@ export class HelmetInventoryService {
         helmet_size: { select: { id: true, size_label: true } },
       },
     });
-    this.cache.reloadAll().catch(() => null);
+    this.cache.reload().catch(() => null);
     return result;
   }
 
@@ -52,14 +52,14 @@ export class HelmetInventoryService {
         helmet_size: { select: { id: true, size_label: true } },
       },
     });
-    this.cache.reloadAll().catch(() => null);
+    this.cache.reload().catch(() => null);
     return result;
   }
 
   async remove(id: string) {
     await this.assertExists(id);
     await this.db.helmet_inventory.delete({ where: { id } });
-    this.cache.reloadAll().catch(() => null);
+    this.cache.reload().catch(() => null);
   }
 
   private async assertExists(id: string) {

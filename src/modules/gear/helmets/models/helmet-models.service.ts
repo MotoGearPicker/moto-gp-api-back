@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { CachedCatalogItem, CachedVariantFilter, CatalogCacheService } from '../../../valkey/catalog-cache.service';
+import { CachedCatalogItem, CachedVariantFilter, HelmetCacheService } from '../../../valkey/helmet-cache.service';
 import { FilterHelmetModelsDto } from './dto/filter-helmet-models.dto';
 import {HelmetFinish} from "../enums";
 
 @Injectable()
 export class HelmetModelsService {
-  constructor(private readonly cache: CatalogCacheService) {}
+  constructor(private readonly cache: HelmetCacheService) {}
 
   async findAll(filters: FilterHelmetModelsDto) {
     const catalog = await this.cache.getCatalog();

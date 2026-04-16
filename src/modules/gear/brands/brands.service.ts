@@ -1,11 +1,15 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { ProductsPrismaService } from '../../../prisma/products-prisma.service';
+import { BrandCacheService } from '../../valkey/brand-cache.service';
 import { GearType } from '../common/enums/gear-type.enum';
 import { CreateBrandDto } from './dto/create-brand.dto';
 
 @Injectable()
 export class BrandsService {
-  constructor(private readonly db: ProductsPrismaService) {}
+  constructor(
+    private readonly db: ProductsPrismaService,
+    private readonly brandCache: BrandCacheService,
+  ) {}
 
   async create(dto: CreateBrandDto) {
     const existing = await this.db.brand.findFirst({
@@ -19,37 +23,16 @@ export class BrandsService {
       throw new ConflictException(`Ya existe una marca con ese ${field}`);
     }
 
-    return this.db.brand.create({
+    const result = await this.db.brand.create({
       data: { name: dto.name, slug: dto.slug },
       select: { id: true, name: true, slug: true, created_at: true },
     });
+
+    this.brandCache.reload().catch(() => null);
+    return result;
   }
 
   findAll(category?: GearType) {
-    return this.db.brand.findMany({
-      where: {
-        deleted_at: null,
-        ...this.buildCategoryFilter(category),
-      },
-      select: { id: true, name: true, slug: true },
-      orderBy: { name: 'asc' },
-    });
-  }
-
-  private buildCategoryFilter(category?: GearType) {
-    switch (category) {
-      case GearType.HELMET:
-        return { helmet_model: { some: { deleted_at: null } } };
-      // case GearType.GLOVES:
-      //   return { glove_model: { some: { deleted_at: null } } };
-      // case GearType.JACKET:
-      //   return { jacket_model: { some: { deleted_at: null } } };
-      // case GearType.BOOTS:
-      //   return { boot_model: { some: { deleted_at: null } } };
-      // case GearType.PANTS:
-      //   return { pants_model: { some: { deleted_at: null } } };
-      default:
-        return {};
-    }
+    return this.brandCache.getBrands(category);
   }
 }

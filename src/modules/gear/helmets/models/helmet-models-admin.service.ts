@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/products-client';
 import { paginate } from '../../../../common/pagination';
 import { ProductsPrismaService } from '../../../../prisma/products-prisma.service';
-import { CatalogCacheService } from '../../../valkey/catalog-cache.service';
+import { HelmetCacheService } from '../../../valkey/helmet-cache.service';
 import { CreateHelmetModelDto } from './dto/create-helmet-model.dto';
 import { UpdateHelmetModelDto } from './dto/update-helmet-model.dto';
 import { FilterHelmetModelsAdminDto } from './dto/filter-helmet-models-admin.dto';
@@ -11,7 +11,7 @@ import { FilterHelmetModelsAdminDto } from './dto/filter-helmet-models-admin.dto
 export class HelmetModelsAdminService {
   constructor(
     private readonly db: ProductsPrismaService,
-    private readonly cache: CatalogCacheService,
+    private readonly cache: HelmetCacheService,
   ) {}
 
   async findAll(filters: FilterHelmetModelsAdminDto) {
