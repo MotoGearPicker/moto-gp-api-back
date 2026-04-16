@@ -27,6 +27,11 @@
             "description": "Lista de marcas"
           }
         },
+        "security": [
+          {
+            "x-api-key": []
+          }
+        ],
         "summary": "Listar marcas",
         "tags": [
           "Brands"
@@ -341,6 +346,11 @@
             "description": "Lista paginada de cascos"
           }
         },
+        "security": [
+          {
+            "x-api-key": []
+          }
+        ],
         "summary": "Listar cascos",
         "tags": [
           "Helmets"
@@ -379,6 +389,11 @@
             "description": "Casco no encontrado"
           }
         },
+        "security": [
+          {
+            "x-api-key": []
+          }
+        ],
         "summary": "Obtener casco por slug",
         "tags": [
           "Helmets"
@@ -2294,6 +2309,11 @@
             "description": "Lista de tiendas"
           }
         },
+        "security": [
+          {
+            "x-api-key": []
+          }
+        ],
         "summary": "Listar tiendas afiliadas activas",
         "tags": [
           "Stores"
@@ -2501,6 +2521,11 @@
             "description": "Error al enviar el email"
           }
         },
+        "security": [
+          {
+            "x-api-key": []
+          }
+        ],
         "summary": "Enviar mensaje de contacto",
         "tags": [
           "Contact"
@@ -2522,6 +2547,11 @@
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "type": "http"
+      },
+      "x-api-key": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
       }
     },
     "schemas": {

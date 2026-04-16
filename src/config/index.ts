@@ -10,6 +10,8 @@ export interface AppConfig {
   APP_DATABASE_URL: string;
   PRODUCTS_DATABASE_URL: string;
 
+  REDIS_URL: string;
+
   JWT_ADMIN_ACCESS_SECRET: string;
   JWT_ADMIN_REFRESH_SECRET: string;
   JWT_ADMIN_RESET_SECRET: string;
@@ -34,6 +36,8 @@ export const config = (): AppConfig => ({
 
   APP_DATABASE_URL: requireEnv('APP_DATABASE_URL'),
   PRODUCTS_DATABASE_URL: requireEnv('PRODUCTS_DATABASE_URL'),
+
+  REDIS_URL: requireEnv('REDIS_URL'),
 
   JWT_ADMIN_ACCESS_SECRET: requireEnv('JWT_ADMIN_ACCESS_SECRET'),
   JWT_ADMIN_REFRESH_SECRET: requireEnv('JWT_ADMIN_REFRESH_SECRET'),

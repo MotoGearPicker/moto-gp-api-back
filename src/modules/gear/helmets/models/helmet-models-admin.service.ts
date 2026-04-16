@@ -2,13 +2,17 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/products-client';
 import { paginate } from '../../../../common/pagination';
 import { ProductsPrismaService } from '../../../../prisma/products-prisma.service';
+import { CatalogCacheService } from '../../../valkey/catalog-cache.service';
 import { CreateHelmetModelDto } from './dto/create-helmet-model.dto';
 import { UpdateHelmetModelDto } from './dto/update-helmet-model.dto';
 import { FilterHelmetModelsAdminDto } from './dto/filter-helmet-models-admin.dto';
 
 @Injectable()
 export class HelmetModelsAdminService {
-  constructor(private readonly db: ProductsPrismaService) {}
+  constructor(
+    private readonly db: ProductsPrismaService,
+    private readonly cache: CatalogCacheService,
+  ) {}
 
   async findAll(filters: FilterHelmetModelsAdminDto) {
     const where = this.buildWhere(filters);
@@ -70,6 +74,7 @@ export class HelmetModelsAdminService {
       include: this.buildDetailInclude(),
     });
 
+    this.cache.invalidateHelmet(item.id).catch(() => null);
     return this.mapDetail(item);
   }
 
@@ -109,6 +114,7 @@ export class HelmetModelsAdminService {
       include: this.buildDetailInclude(),
     });
 
+    this.cache.invalidateHelmet(id).catch(() => null);
     return this.mapDetail(item);
   }
 
@@ -118,6 +124,7 @@ export class HelmetModelsAdminService {
       where: { id },
       data: { deleted_at: new Date() },
     });
+    this.cache.invalidateHelmet(id).catch(() => null);
   }
 
   async restore(id: string) {
@@ -130,6 +137,7 @@ export class HelmetModelsAdminService {
       include: this.buildDetailInclude(),
     });
 
+    this.cache.invalidateHelmet(id).catch(() => null);
     return this.mapDetail(restored);
   }
 

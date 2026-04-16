@@ -2,13 +2,17 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/products-client';
 import { paginate } from '../../../../common/pagination';
 import { ProductsPrismaService } from '../../../../prisma/products-prisma.service';
+import { CatalogCacheService } from '../../../valkey/catalog-cache.service';
 import { CreateHelmetVariantDto } from './dto/create-helmet-variant.dto';
 import { UpdateHelmetVariantDto } from './dto/update-helmet-variant.dto';
 import { FilterHelmetVariantsDto } from './dto/filter-helmet-variants.dto';
 
 @Injectable()
 export class HelmetVariantsService {
-  constructor(private readonly db: ProductsPrismaService) {}
+  constructor(
+    private readonly db: ProductsPrismaService,
+    private readonly cache: CatalogCacheService,
+  ) {}
 
   async findAllAdmin(filters: FilterHelmetVariantsDto) {
     const where = this.buildPublicWhere(filters, true);
@@ -75,7 +79,7 @@ export class HelmetVariantsService {
   async create(modelId: string, dto: CreateHelmetVariantDto) {
     await this.assertModelExists(modelId);
 
-    return this.db.helmet_model_variant.create({
+    const result = await this.db.helmet_model_variant.create({
       data: {
         helmet_id: modelId,
         color_name: dto.colorName,
@@ -86,12 +90,14 @@ export class HelmetVariantsService {
         image_url: dto.images ?? [],
       },
     });
+    this.cache.invalidateHelmet(modelId).catch(() => null);
+    return result;
   }
 
   async update(modelId: string, variantId: string, dto: UpdateHelmetVariantDto) {
     await this.findOne(modelId, variantId);
 
-    return this.db.helmet_model_variant.update({
+    const result = await this.db.helmet_model_variant.update({
       where: { id: variantId },
       data: {
         ...(dto.colorName && { color_name: dto.colorName }),
@@ -103,6 +109,8 @@ export class HelmetVariantsService {
         updated_at: new Date(),
       },
     });
+    this.cache.invalidateHelmet(modelId).catch(() => null);
+    return result;
   }
 
   async remove(modelId: string, variantId: string) {
@@ -111,6 +119,7 @@ export class HelmetVariantsService {
       where: { id: variantId },
       data: { deleted_at: new Date() },
     });
+    this.cache.invalidateHelmet(modelId).catch(() => null);
   }
 
   async restore(modelId: string, variantId: string) {
@@ -122,10 +131,12 @@ export class HelmetVariantsService {
         `Variant #${variantId} not found for helmet #${modelId}`,
       );
 
-    return this.db.helmet_model_variant.update({
+    const result = await this.db.helmet_model_variant.update({
       where: { id: variantId },
       data: { deleted_at: null, updated_at: new Date() },
     });
+    this.cache.invalidateHelmet(modelId).catch(() => null);
+    return result;
   }
 
   // ─── Public helpers ───────────────────────────────────────────────────────
