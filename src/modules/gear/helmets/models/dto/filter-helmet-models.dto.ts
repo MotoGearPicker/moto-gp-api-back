@@ -23,7 +23,9 @@ import {
 
 export class FilterHelmetModelsDto extends PaginationDto {
   @IsOptional()
-  brandSlug?: string;
+  @IsArray()
+  @Transform(({ value }) => (Array.isArray(value) ? value : [value]))
+  brandSlug?: string[];
 
   @IsOptional()
   @IsArray()

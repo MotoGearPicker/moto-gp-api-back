@@ -37,7 +37,7 @@ export class HelmetModelsService {
 
   private filterCatalog(catalog: CachedCatalogItem[], filters: FilterHelmetModelsDto): CachedCatalogItem[] {
     return catalog.filter((item) => {
-      if (filters.brandSlug && item.brand.slug !== filters.brandSlug) return false;
+      if (filters.brandSlug?.length && !filters.brandSlug.includes(item.brand.slug)) return false;
       if (filters.shape?.length && !filters.shape.some((s) => item.shape.includes(s))) return false;
       if (filters.purpose?.length && !filters.purpose.some((p) => item.purpose.includes(p))) return false;
       if (filters.shellMaterial?.length && !filters.shellMaterial.some((m) => item.shellMaterial.includes(m))) return false;
