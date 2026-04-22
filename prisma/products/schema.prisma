@@ -79,7 +79,6 @@ model helmet_model {
   created_at               DateTime                @default(now()) @db.Timestamptz(6)
   updated_at               DateTime                @default(now()) @db.Timestamptz(6)
   deleted_at               DateTime?               @db.Timestamptz(6)
-  helmet_type              helmet_type[]
   helmet_shape             helmet_shape[]          @default([])
   helmet_purpose           helmet_purpose[]        @default([])
   shell_material           helmet_shell_material[]
@@ -164,6 +163,42 @@ model helmet_model_variant {
   @@index([helmet_id, deleted_at])
 }
 
+model BedrockBatchJob {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobArn        String             @unique @map("job_arn")
+  jobName       String             @unique @map("job_name") @db.VarChar(200)
+  type          bedrock_batch_type
+  status        String             @default("Submitted") @db.VarChar(50)
+  inputS3Uri    String             @map("input_s3_uri")
+  outputS3Uri   String             @map("output_s3_uri")
+  recordCount   Int                @map("record_count")
+  paddedCount   Int                @default(0) @map("padded_count")
+  failureReason String?            @map("failure_reason")
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt   DateTime?          @map("completed_at") @db.Timestamptz(6)
+  items         BedrockBatchItem[]
+
+  @@index([status])
+  @@map("bedrock_batch_job")
+}
+
+model BedrockBatchItem {
+  id        String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId     String          @map("job_id") @db.Uuid
+  recordId  String          @map("record_id") @db.VarChar(100)
+  url       String
+  colorHint String?         @map("color_hint")
+  status    String          @default("Pending") @db.VarChar(50)
+  result    Json?
+  error     String?
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  job       BedrockBatchJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, recordId])
+  @@index([jobId])
+  @@map("bedrock_batch_item")
+}
+
 enum color_family {
   black
   white
@@ -216,14 +251,6 @@ enum helmet_shell_material {
   aramid_fiber
 }
 
-enum helmet_type {
-  full_face
-  modular
-  open_face
-  half
-  off_road
-}
-
 enum helmet_shape {
   full_face
   modular
@@ -257,4 +284,9 @@ enum visor_pinlock {
   pinlock_max_vision
   pinlock_ready
   not_compatible
+}
+
+enum bedrock_batch_type {
+  TEXT
+  IMAGE
 }
