@@ -1,0 +1,76 @@
+services:
+
+  db-app:
+    image: postgres:16
+    container_name: moto-gear-db-app
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: moto_gear_app
+    ports:
+      - '5434:5432'
+    volumes:
+      - db_app_data:/var/lib/postgresql/data
+
+  db-products:
+    image: postgres:16
+    container_name: moto-gear-db-products
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: moto_gear_products
+    ports:
+      - '5433:5432'
+    volumes:
+      - db_products_data:/var/lib/postgresql/data
+
+  valkey:
+    image: valkey/valkey:8
+    container_name: moto-gear-valkey
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - valkey_data:/data
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: moto-gear-localstack
+    restart: always
+    environment:
+      - SERVICES=s3
+      - DEFAULT_REGION=us-east-1
+    ports:
+      - '4566:4566'
+    volumes:
+      - localstack_data:/var/lib/localstack
+
+  init-s3:
+    image: amazon/aws-cli
+    container_name: moto-gear-init-s3
+    depends_on:
+      - localstack
+    entrypoint: >
+      /bin/sh -c "
+        sleep 5 &&
+        aws --endpoint-url=http://localstack:4566 s3 mb s3://motogearpick-images --region us-east-1 &&
+        echo 'Bucket created'
+      "
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+    restart: 'no'
+
+volumes:
+  db_app_data:
+  db_products_data:
+  valkey_data:
+  localstack_data:
+
+networks:
+  default:
+    driver: bridge
+    name: moto-gear-network

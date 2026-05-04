@@ -47,10 +47,12 @@ export interface CachedCatalogItem {
 
 const CATALOG_KEY = 'catalog:helmets';
 const detailKey = (brandSlug: string, modelSlug: string) => `helmet:${brandSlug}:${modelSlug}`;
+const TTL = 40 * 60; // 40 min — safety net if the 30-min cron fails
 
 @Injectable()
 export class HelmetCacheService {
   private readonly logger = new Logger(HelmetCacheService.name);
+  private readonly pending = new Map<string, Promise<any>>();
 
   constructor(
     @Inject(VALKEY_CLIENT) private readonly client: Valkey,
@@ -61,12 +63,8 @@ export class HelmetCacheService {
 
   async getCatalog(): Promise<CachedCatalogItem[]> {
     const raw = await this.client.get(CATALOG_KEY);
-    if (!raw) {
-      await this.loadCatalog();
-      const reloaded = await this.client.get(CATALOG_KEY);
-      return reloaded ? JSON.parse(reloaded) : [];
-    }
-    return JSON.parse(raw);
+    if (raw) return JSON.parse(raw);
+    return this.loadOnce(CATALOG_KEY, () => this.loadCatalog());
   }
 
   async getHelmetDetail(brandSlug: string, modelSlug: string): Promise<any | null> {
@@ -101,9 +99,17 @@ export class HelmetCacheService {
     }
   }
 
+  private loadOnce<T>(key: string, fn: () => Promise<T>): Promise<T> {
+    const existing = this.pending.get(key);
+    if (existing) return existing as Promise<T>;
+    const p = fn().finally(() => this.pending.delete(key));
+    this.pending.set(key, p);
+    return p;
+  }
+
   // ─── Private loaders ─────────────────────────────────────────────────────────
 
-  private async loadCatalog(): Promise<void> {
+  private async loadCatalog(): Promise<CachedCatalogItem[]> {
     const models = await this.db.helmet_model.findMany({
       where: { deleted_at: null },
       orderBy: { name: 'asc' },
@@ -131,7 +137,8 @@ export class HelmetCacheService {
     });
 
     const items: CachedCatalogItem[] = models.map((m) => this.mapCatalogItem(m));
-    await this.client.set(CATALOG_KEY, JSON.stringify(items));
+    await this.client.set(CATALOG_KEY, JSON.stringify(items), 'EX', TTL);
+    return items;
   }
 
   private async loadAllDetails(): Promise<void> {
@@ -144,7 +151,7 @@ export class HelmetCacheService {
 
     const pipeline = this.client.pipeline();
     for (const m of models) {
-      pipeline.set(detailKey(m.brand.slug, m.slug), JSON.stringify(this.mapDetailItem(m)));
+      pipeline.set(detailKey(m.brand.slug, m.slug), JSON.stringify(this.mapDetailItem(m)), 'EX', TTL);
     }
     await pipeline.exec();
   }
@@ -156,7 +163,7 @@ export class HelmetCacheService {
     });
 
     if (model) {
-      await this.client.set(detailKey(brandSlug, modelSlug), JSON.stringify(this.mapDetailItem(model)));
+      await this.client.set(detailKey(brandSlug, modelSlug), JSON.stringify(this.mapDetailItem(model)), 'EX', TTL);
     }
   }
 

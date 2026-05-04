@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Logger, Module } from '@nestjs/common';
 import Valkey from 'iovalkey';
 import { VALKEY_URL } from '../../config/valkey.config';
 import { BrandCacheService } from './brand-cache.service';
@@ -8,15 +8,19 @@ import { VALKEY_CLIENT } from './valkey.constants';
 
 export { VALKEY_CLIENT } from './valkey.constants';
 
+const valkeyLogger = new Logger('ValkeyClient');
+
 @Global()
 @Module({
   providers: [
     {
       provide: VALKEY_CLIENT,
       useFactory: () => {
-        return new Valkey(VALKEY_URL(), {
+        const client = new Valkey(VALKEY_URL(), {
           tls: { rejectUnauthorized: false },
         });
+        client.on('error', (err: Error) => valkeyLogger.error(err.message, err.stack));
+        return client;
       },
     },
     HelmetCacheService,

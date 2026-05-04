@@ -14,10 +14,12 @@ const BRAND_KEYS: Record<string, string> = {
   all: 'brands',
   [GearType.HELMET]: 'brands:helmets',
 };
+const TTL = 40 * 60;
 
 @Injectable()
 export class BrandCacheService {
   private readonly logger = new Logger(BrandCacheService.name);
+  private readonly pending = new Map<string, Promise<any>>();
 
   constructor(
     @Inject(VALKEY_CLIENT) private readonly client: Valkey,
@@ -29,12 +31,12 @@ export class BrandCacheService {
   async getBrands(category?: GearType): Promise<CachedBrand[]> {
     const key = (category && BRAND_KEYS[category]) ?? BRAND_KEYS.all;
     const raw = await this.client.get(key);
-    if (!raw) {
+    if (raw) return JSON.parse(raw);
+    return this.loadOnce(key, async () => {
       await this.reload();
       const reloaded = await this.client.get(key);
-      return reloaded ? JSON.parse(reloaded) : [];
-    }
-    return JSON.parse(raw);
+      return reloaded ? (JSON.parse(reloaded) as CachedBrand[]) : [];
+    });
   }
 
   async reload(): Promise<void> {
@@ -45,6 +47,14 @@ export class BrandCacheService {
     }
   }
 
+  private loadOnce<T>(key: string, fn: () => Promise<T>): Promise<T> {
+    const existing = this.pending.get(key);
+    if (existing) return existing as Promise<T>;
+    const p = fn().finally(() => this.pending.delete(key));
+    this.pending.set(key, p);
+    return p;
+  }
+
   // ─── Private loaders ─────────────────────────────────────────────────────────
 
   private async loadAll(): Promise<void> {
@@ -53,7 +63,7 @@ export class BrandCacheService {
       select: { id: true, name: true, slug: true },
       orderBy: { name: 'asc' },
     });
-    await this.client.set(BRAND_KEYS.all, JSON.stringify(brands));
+    await this.client.set(BRAND_KEYS.all, JSON.stringify(brands), 'EX', TTL);
   }
 
   private async loadByCategory(category: GearType): Promise<void> {
@@ -66,7 +76,7 @@ export class BrandCacheService {
       select: { id: true, name: true, slug: true },
       orderBy: { name: 'asc' },
     });
-    await this.client.set(key, JSON.stringify(brands));
+    await this.client.set(key, JSON.stringify(brands), 'EX', TTL);
   }
 
   private buildCategoryFilter(category: GearType) {
