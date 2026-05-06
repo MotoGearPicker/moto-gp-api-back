@@ -17,6 +17,7 @@ import {
   visor_pinlock,
 } from '@prisma/products-client';
 import { ProductsPrismaService } from '../../prisma/products-prisma.service';
+import { CdnImagesService } from '../cdn/cdn-images.service';
 import { FilterReviewsDto } from './dto';
 import { UpdateReviewDto } from './dto';
 import { ScrapedModelDataDto } from './dto';
@@ -27,7 +28,10 @@ import { ScrapedModelData, ScrapedVariantData } from './interfaces';
 export class ScraperReviewsService {
   private readonly logger = new Logger(ScraperReviewsService.name);
 
-  constructor(private readonly prisma: ProductsPrismaService) {}
+  constructor(
+    private readonly prisma: ProductsPrismaService,
+    private readonly cdnImages: CdnImagesService,
+  ) {}
 
   /**
    * Extract model and variant data from a review record.
@@ -559,6 +563,7 @@ export class ScraperReviewsService {
 
   /**
    * Persist a review's data to helmet_model, helmet_model_variant, and helmet_model_size tables.
+   * Images are downloaded, converted to WebP at all sizes, and uploaded to S3 before DB update.
    */
   private async persistToHelmetTables(review: any): Promise<void> {
     const { modelData, variantData } = this.getResolvedData(review);
@@ -566,94 +571,114 @@ export class ScraperReviewsService {
     const brandName = brandSlug.charAt(0).toUpperCase() + brandSlug.slice(1);
 
     try {
-      await this.prisma.$transaction(async (tx) => {
-      // 1. Upsert brand
-      const brand = await tx.brand.upsert({
-        where: { slug: brandSlug },
-        update: {},
-        create: { name: brandName, slug: brandSlug },
-      });
+      // Step 1: Upsert brand / model / variant metadata in a transaction.
+      // image_url is left empty on create and unchanged on update —
+      // it will be set after CDN upload below.
+      const variantId = await this.prisma.$transaction(async (tx) => {
+        // 1. Upsert brand
+        const brand = await tx.brand.upsert({
+          where: { slug: brandSlug },
+          update: {},
+          create: { name: brandName, slug: brandSlug },
+        });
 
-      // 2. Upsert helmet model — never overwrite existing data
-      const model = await tx.helmet_model.upsert({
-        where: {
-          brand_id_slug: { brand_id: brand.id, slug: modelData.modelSlug },
-        },
-        update: {},
-        create: {
-          slug: modelData.modelSlug,
-          name: modelData.modelName,
-          brand_id: brand.id,
-          helmet_shape: modelData.helmetShape as helmet_shape[],
-          helmet_purpose: modelData.helmetPurpose as helmet_purpose[],
-          shell_material: modelData.shellMaterial as helmet_shell_material[],
-          shell_sizes: modelData.shellSizes ?? undefined,
-          weight_grams: modelData.weightGrams ?? undefined,
-          visor_pinlock_compatible: modelData.visorPinlockCompatible as visor_pinlock[],
-          visor_pinlock_included: modelData.visorPinlockIncluded,
-          pinlock_dks_code: modelData.pinlockDksCode,
-          visor_anti_scratch: modelData.visorAntiScratch,
-          visor_anti_fog: modelData.visorAntiFog,
-          sun_visor: modelData.sunVisor,
-          sun_visor_type: modelData.sunVisorType,
-          intercom_ready: modelData.intercomReady,
-          intercom_designed_brand: modelData.intercomDesignedBrand,
-          intercom_designed_model: modelData.intercomDesignedModel,
-          removable_lining: modelData.removableLining,
-          washable_lining: modelData.washableLining,
-          emergency_release: modelData.emergencyRelease,
-          closure_type: (modelData.closureType as helmet_closure_type) ?? undefined,
-          certification: modelData.certification as helmet_certification[],
-          tear_off_compatible: modelData.tearOffCompatible,
-          included_accessories: modelData.includedAccessories,
-        },
-      });
+        // 2. Upsert helmet model — never overwrite existing data
+        const model = await tx.helmet_model.upsert({
+          where: {
+            brand_id_slug: { brand_id: brand.id, slug: modelData.modelSlug },
+          },
+          update: {},
+          create: {
+            slug: modelData.modelSlug,
+            name: modelData.modelName,
+            brand_id: brand.id,
+            helmet_shape: modelData.helmetShape as helmet_shape[],
+            helmet_purpose: modelData.helmetPurpose as helmet_purpose[],
+            shell_material: modelData.shellMaterial as helmet_shell_material[],
+            shell_sizes: modelData.shellSizes ?? undefined,
+            weight_grams: modelData.weightGrams ?? undefined,
+            visor_pinlock_compatible: modelData.visorPinlockCompatible as visor_pinlock[],
+            visor_pinlock_included: modelData.visorPinlockIncluded,
+            pinlock_dks_code: modelData.pinlockDksCode,
+            visor_anti_scratch: modelData.visorAntiScratch,
+            visor_anti_fog: modelData.visorAntiFog,
+            sun_visor: modelData.sunVisor,
+            sun_visor_type: modelData.sunVisorType,
+            intercom_ready: modelData.intercomReady,
+            intercom_designed_brand: modelData.intercomDesignedBrand,
+            intercom_designed_model: modelData.intercomDesignedModel,
+            removable_lining: modelData.removableLining,
+            washable_lining: modelData.washableLining,
+            emergency_release: modelData.emergencyRelease,
+            closure_type: (modelData.closureType as helmet_closure_type) ?? undefined,
+            certification: modelData.certification as helmet_certification[],
+            tear_off_compatible: modelData.tearOffCompatible,
+            included_accessories: modelData.includedAccessories,
+          },
+        });
 
-      // 3. Upsert variant (unique by model + color_name)
-      await tx.helmet_model_variant.upsert({
-        where: {
-          helmet_id_color_name: {
+        // 3. Upsert variant — image_url set after CDN upload
+        const variant = await tx.helmet_model_variant.upsert({
+          where: {
+            helmet_id_color_name: {
+              helmet_id: model.id,
+              color_name: variantData.colorName,
+            },
+          },
+          update: {
+            color_families: { set: variantData.colorFamilies as color_family[] },
+            finish: (variantData.finish as helmet_finish) ?? undefined,
+            graphic_name: variantData.graphicName,
+            sku: variantData.sku,
+            // image_url intentionally not updated here — set after CDN upload
+          },
+          create: {
             helmet_id: model.id,
             color_name: variantData.colorName,
+            color_families: variantData.colorFamilies as color_family[],
+            finish: (variantData.finish as helmet_finish) ?? undefined,
+            graphic_name: variantData.graphicName,
+            sku: variantData.sku,
+            image_url: [], // populated after CDN upload
           },
-        },
-        update: {
-          color_families: { set: variantData.colorFamilies as color_family[] },
-          finish: (variantData.finish as helmet_finish) ?? undefined,
-          graphic_name: variantData.graphicName,
-          sku: variantData.sku,
-          image_url: { set: variantData.imageUrls },
-        },
-        create: {
-          helmet_id: model.id,
-          color_name: variantData.colorName,
-          color_families: variantData.colorFamilies as color_family[],
-          finish: (variantData.finish as helmet_finish) ?? undefined,
-          graphic_name: variantData.graphicName,
-          sku: variantData.sku,
-          image_url: variantData.imageUrls,
-        },
+        });
+
+        // 4. Insert sizes (skip duplicates)
+        if (modelData.sizes.length > 0) {
+          const existingSizes = await tx.helmet_model_size.findMany({
+            where: { model_id: model.id },
+            select: { size_label: true },
+          });
+          const existingLabels = new Set(existingSizes.map((s) => s.size_label));
+          const newSizes = modelData.sizes.filter((s) => !existingLabels.has(s));
+          if (newSizes.length > 0) {
+            await tx.helmet_model_size.createMany({
+              data: newSizes.map((s) => ({ model_id: model.id, size_label: s })),
+            });
+          }
+        }
+
+        return variant.id;
       });
 
-      // 4. Insert sizes (skip duplicates)
-      if (modelData.sizes.length > 0) {
-        const existingSizes = await tx.helmet_model_size.findMany({
-          where: { model_id: model.id },
-          select: { size_label: true },
-        });
-        const existingLabels = new Set(existingSizes.map((s) => s.size_label));
-        const newSizes = modelData.sizes.filter((s) => !existingLabels.has(s));
-        if (newSizes.length > 0) {
-          await tx.helmet_model_size.createMany({
-            data: newSizes.map((s) => ({ model_id: model.id, size_label: s })),
-          });
-        }
-      }
+      // Step 2: Download images from brand CDN, resize to all sizes, upload to S3.
+      // Runs outside the transaction — no DB lock held during network I/O.
+      const cdnKeys = await this.cdnImages.processVariantImages(
+        variantData.imageUrls,
+        brandSlug,
+        modelData.modelSlug,
+        variantId,
+      );
+
+      // Step 3: Update variant with CDN keys
+      await this.prisma.helmet_model_variant.update({
+        where: { id: variantId },
+        data: { image_url: cdnKeys },
+      });
 
       this.logger.log(
-        `Saved model="${modelData.modelName}" variant="${variantData.colorName}" with ${modelData.sizes.length} sizes`,
+        `Saved model="${modelData.modelName}" variant="${variantData.colorName}" — ${cdnKeys.length} images uploaded to CDN`,
       );
-    });
     } catch (err) {
       this.handlePrismaError(err);
     }

@@ -1,5 +1,5 @@
 import { Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
-import { PutObjectCommand, S3Client, HeadBucketCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand, HeadObjectCommand, S3Client, HeadBucketCommand } from '@aws-sdk/client-s3';
 import { createS3Client, S3_BUCKET } from '../../config/s3.config';
 import * as crypto from 'crypto';
 import * as path from 'path';
@@ -22,6 +22,44 @@ export class S3Service implements OnModuleInit {
       this.logger.log(`S3 OK — bucket "${bucket}" accesible`);
     } catch (err: any) {
       this.logger.warn(`S3 advertencia al verificar bucket "${bucket}": ${this.describeError(err)}`);
+    }
+  }
+
+  /**
+   * Check whether a key exists in the bucket.
+   */
+  async exists(key: string): Promise<boolean> {
+    try {
+      await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Upload a raw Buffer to S3 with an explicit content type.
+   */
+  async putBuffer(
+    key: string,
+    body: Buffer,
+    contentType: string,
+    cacheControl = 'public, max-age=31536000, immutable',
+  ): Promise<void> {
+    try {
+      await this.client.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+          Body: body,
+          ContentType: contentType,
+          CacheControl: cacheControl,
+        }),
+      );
+    } catch (err: any) {
+      const detail = this.describeError(err);
+      this.logger.error(`Error subiendo buffer a S3 — key: ${key} | ${detail}`, err?.stack);
+      throw new InternalServerErrorException(`Error al subir a S3: ${detail}`);
     }
   }
 
