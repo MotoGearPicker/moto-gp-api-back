@@ -61,7 +61,8 @@
     "prisma": "^7.4.2",
     "reflect-metadata": "^0.1.13",
     "resend": "^6.11.0",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
