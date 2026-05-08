@@ -434,9 +434,10 @@ export class ScraperReviewsService {
           const { variantData } = this.getResolvedData(r);
           return tx.helmet_model_variant.upsert({
             where: {
-              helmet_id_color_name: {
+              helmet_id_color_name_graphic_name: {
                 helmet_id: model.id,
                 color_name: variantData.colorName,
+                graphic_name: variantData.graphicName ?? null,
               },
             },
             update: {
@@ -620,9 +621,10 @@ export class ScraperReviewsService {
         // 3. Upsert variant — image_url set after CDN upload
         const variant = await tx.helmet_model_variant.upsert({
           where: {
-            helmet_id_color_name: {
+            helmet_id_color_name_graphic_name: {
               helmet_id: model.id,
               color_name: variantData.colorName,
+              graphic_name: variantData.graphicName ?? null,
             },
           },
           update: {
