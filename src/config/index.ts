@@ -28,6 +28,8 @@ export interface AppConfig {
   S3_PUBLIC_URL: string;
 
   RESEND_API_KEY: string;
+
+  SENTRY_DSN: string | undefined;
 }
 
 export const config = (): AppConfig => ({
@@ -58,4 +60,6 @@ export const config = (): AppConfig => ({
   S3_PUBLIC_URL: optionalEnv('S3_PUBLIC_URL', ''),
 
   RESEND_API_KEY: requireEnv('RESEND_API_KEY'),
+
+  SENTRY_DSN: optionalEnv('SENTRY_DSN'),
 });

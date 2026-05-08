@@ -157,7 +157,7 @@ model helmet_model_variant {
   helmet_inventory helmet_inventory[]
   helmet_model     helmet_model       @relation(fields: [helmet_id], references: [id], onDelete: Cascade, map: "helmet_variant_helmet_id_fkey")
 
-  @@unique([helmet_id, color_name], map: "helmet_variant_helmet_id_color_name_key")
+  @@unique([helmet_id, color_name, graphic_name], map: "helmet_variant_helmet_id_color_name_key")
   @@index([helmet_id], map: "helmet_variant_helmet_id_idx")
   @@index([deleted_at])
   @@index([helmet_id, deleted_at])

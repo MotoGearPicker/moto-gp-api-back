@@ -119,6 +119,7 @@ export class HelmetCacheService {
           where: { deleted_at: null },
           select: {
             color_name: true,
+            graphic_name: true,
             color_families: true,
             finish: true,
             image_url: true,
@@ -128,7 +129,10 @@ export class HelmetCacheService {
               take: 1,
             },
           },
-          orderBy: { color_name: 'asc' as const },
+          orderBy: [
+            { graphic_name: { sort: 'asc', nulls: 'first' } as const },
+            { color_name: 'asc' as const },
+          ],
         },
         _count: {
           select: { helmet_model_variant: { where: { deleted_at: null } } },
@@ -189,7 +193,10 @@ export class HelmetCacheService {
             orderBy: { price: 'asc' as const },
           },
         },
-        orderBy: { color_name: 'asc' as const },
+        orderBy: [
+          { graphic_name: { sort: 'asc', nulls: 'first' } as const },
+          { color_name: 'asc' as const },
+        ],
       },
       _count: {
         select: { helmet_model_variant: { where: { deleted_at: null } } },
@@ -237,7 +244,10 @@ export class HelmetCacheService {
       includedAccessories: raw.included_accessories ?? [],
       variantsCount: raw._count?.helmet_model_variant ?? 0,
       variantImages: variants.map((v: any) => ({
-        colorName: v.color_name,
+        colorName:
+          v.graphic_name && v.graphic_name.trim().toLowerCase() !== v.color_name.trim().toLowerCase()
+            ? `${v.graphic_name} ${v.color_name}`
+            : v.color_name,
         image: v.image_url?.[0] ?? null,
       })),
       priceFrom: prices.length ? Math.min(...prices) : null,
